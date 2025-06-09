@@ -1,286 +1,496 @@
 function initSmartAllocation() {
     const container = document.getElementById('allocationSimulator');
     
-    // Create the simulation interface
-    const simulatorHtml = `
-        <div class="row">
-            <div class="col-md-6">
-                <div class="card">
-                    <div class="card-body">
-                        <h5 class="card-title">Faculty Planning Simulator</h5>
-                        <form id="simulationForm">
-                            ${mockData.programs.map(program => `
-                                <div class="mb-3">
-                                    <label class="form-label">${program.name}</label>
-                                    <div class="input-group">
-                                        <input type="number" 
-                                               class="form-control faculty-input" 
-                                               data-program="${program.id}"
-                                               value="${mockData.facultyData.currentFTE[program.id][mockData.facultyData.currentFTE[program.id].length - 1].value.toFixed(1)}"
-                                               step="0.5"
-                                               min="0">
-                                        <span class="input-group-text">FTEs</span>
-                                    </div>
-                                </div>
-                            `).join('')}
-                            <button type="submit" class="btn btn-primary">Simulate Impact</button>
-                        </form>
-                    </div>
-                </div>
+    // Create filter container at the top
+    const filterContainer = document.createElement('div');
+    filterContainer.className = 'filter-container mb-4';
+    filterContainer.innerHTML = `
+        <div class="filter-row">
+            <div class="filter-group">
+                <label for="timeframe">Timeframe</label>
+                <select id="timeframe" class="form-select">
+                    <option value="1">1 Year</option>
+                    <option value="3" selected>3 Years</option>
+                    <option value="5">5 Years</option>
+                </select>
             </div>
-            <div class="col-md-6">
-                <div class="card">
+            <div class="filter-group">
+                <label for="department">Department</label>
+                <select id="department" class="form-select">
+                    <option value="all">All Departments</option>
+                    ${mockData.programs.map(p => `<option value="${p.id}">${p.name}</option>`).join('')}
+                </select>
+            </div>
+            <div class="filter-group">
+                <label for="allocationStrategy">Allocation Strategy</label>
+                <select id="allocationStrategy" class="form-select">
+                    <option value="balanced">Balanced Distribution</option>
+                    <option value="costOptimized">Cost Optimized</option>
+                    <option value="qualityFocused">Quality Focused</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label for="confidenceThreshold">Confidence Threshold</label>
+                <select id="confidenceThreshold" class="form-select">
+                    <option value="0">All Suggestions</option>
+                    <option value="70">High Confidence (>70%)</option>
+                    <option value="85">Very High Confidence (>85%)</option>
+                </select>
+            </div>
+        </div>
+    `;
+    
+    // Create main content structure
+    const mainContent = document.createElement('div');
+    mainContent.innerHTML = `
+        <div class="row">
+            <div class="col-12">
+                <div class="card mb-4">
                     <div class="card-body">
-                        <h5 class="card-title">Simulation Results</h5>
-                        <div id="simulationResults">
-                            <p class="text-muted">Adjust faculty numbers and click simulate to see the impact.</p>
+                        <h5 class="card-title">Suggested Faculty Allocation Changes</h5>
+                        <div class="table-responsive">
+                            <table class="table table-hover" id="suggestionsTable">
+                                <thead>
+                                    <tr>
+                                        <th>Department</th>
+                                        <th>Current FTE</th>
+                                        <th>Suggested FTE</th>
+                                        <th>Change</th>
+                                        <th>Rationale</th>
+                                        <th>Confidence</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="suggestionsTableBody"></tbody>
+                            </table>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-        <div class="row mt-4">
+
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <h5 class="card-title">Before vs After Comparison</h5>
+                        <canvas id="comparisonChart"></canvas>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <h5 class="card-title">Impact Forecast</h5>
+                        <canvas id="impactChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
             <div class="col-12">
                 <div class="card">
                     <div class="card-body">
-                        <h5 class="card-title">AI-Generated Rebalancing Proposals</h5>
-                        <div id="rebalancingProposals"></div>
+                        <h5 class="card-title">Approval Workflow</h5>
+                        <div class="table-responsive">
+                            <table class="table" id="approvalTable">
+                                <thead>
+                                    <tr>
+                                        <th>Change ID</th>
+                                        <th>Department</th>
+                                        <th>Proposed Change</th>
+                                        <th>Status</th>
+                                        <th>Comments</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="approvalTableBody"></tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
     `;
     
-    container.innerHTML = simulatorHtml;
-
-    // Initialize simulation handlers
-    const form = document.getElementById('simulationForm');
-    const resultsDiv = document.getElementById('simulationResults');
-    const proposalsDiv = document.getElementById('rebalancingProposals');
-
-    form.addEventListener('submit', (e) => {
-        e.preventDefault();
-        
-        // Gather current simulation values
-        const simulatedValues = {};
-        mockData.programs.forEach(program => {
-            const input = form.querySelector(`input[data-program="${program.id}"]`);
-            simulatedValues[program.id] = parseFloat(input.value);
-        });
-
-        // Calculate impact
-        const impact = calculateImpact(simulatedValues);
-        
-        // Display results
-        displayResults(impact, resultsDiv);
-        
-        // Generate and display proposals
-        const proposals = generateProposals(impact);
-        displayProposals(proposals, proposalsDiv);
+    // Append elements to container
+    container.appendChild(filterContainer);
+    container.appendChild(mainContent);
+    
+    // Initialize event listeners
+    const filters = ['timeframe', 'department', 'allocationStrategy', 'confidenceThreshold'];
+    filters.forEach(filterId => {
+        document.getElementById(filterId).addEventListener('change', updateAllocationSuggestions);
     });
 
-    // Trigger initial simulation
-    form.dispatchEvent(new Event('submit'));
+    // Initialize charts
+    initializeCharts();
+    
+    // Initial data load
+    updateAllocationSuggestions();
 }
 
-function calculateImpact(simulatedValues) {
-    const currentYearIndex = mockData.years.length - 1;
-    const impact = {
-        gaps: {},
-        totalGap: 0,
-        improvements: {},
-        costImplications: {}
+function initializeSmartAllocation() {
+    // Get filter elements
+    const timeframeSelect = document.getElementById('timeframe');
+    const departmentSelect = document.getElementById('department');
+    const strategySelect = document.getElementById('allocationStrategy');
+    const confidenceSelect = document.getElementById('confidenceThreshold');
+
+    // Add event listeners to filters
+    [timeframeSelect, departmentSelect, strategySelect, confidenceSelect].forEach(filter => {
+        filter.addEventListener('change', updateAllocationSuggestions);
+    });
+
+    // Initialize charts
+    initializeComparisonChart();
+    initializeImpactChart();
+
+    // Initial data load
+    updateAllocationSuggestions();
+}
+
+function updateAllocationSuggestions() {
+    const filters = {
+        timeframe: parseInt(document.getElementById('timeframe').value),
+        department: document.getElementById('department').value,
+        strategy: document.getElementById('allocationStrategy').value,
+        confidenceThreshold: parseInt(document.getElementById('confidenceThreshold').value)
     };
 
-    mockData.programs.forEach(program => {
-        const required = mockData.facultyData.requiredFTE[program.id][currentYearIndex].value;
-        const current = simulatedValues[program.id];
-        const previousGap = required - mockData.facultyData.currentFTE[program.id][currentYearIndex].value;
-        const newGap = required - current;
-        
-        impact.gaps[program.id] = newGap;
-        impact.totalGap += newGap;
-        impact.improvements[program.id] = previousGap - newGap;
-        impact.costImplications[program.id] = (current - mockData.facultyData.currentFTE[program.id][currentYearIndex].value) * 250000; // Assuming average cost of 250k per FTE
-    });
-
-    return impact;
-}
-
-function displayResults(impact, container) {
-    const resultsHtml = `
-        <div class="alert ${Math.abs(impact.totalGap) < 1 ? 'alert-success' : 'alert-warning'} mb-3">
-            <strong>Overall Balance:</strong> ${Math.abs(impact.totalGap).toFixed(1)} FTEs ${impact.totalGap > 0 ? 'shortage' : 'surplus'}
-        </div>
-        <div class="table-responsive">
-            <table class="table table-sm">
-                <thead>
-                    <tr>
-                        <th>Program</th>
-                        <th>Gap</th>
-                        <th>Improvement</th>
-                        <th>Cost Impact</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    ${mockData.programs.map(program => `
-                        <tr>
-                            <td>${program.name}</td>
-                            <td class="text-${impact.gaps[program.id] > 0 ? 'danger' : 'success'}">
-                                ${Math.abs(impact.gaps[program.id]).toFixed(1)} ${impact.gaps[program.id] > 0 ? 'short' : 'surplus'}
-                            </td>
-                            <td class="text-${impact.improvements[program.id] > 0 ? 'success' : 'danger'}">
-                                ${impact.improvements[program.id].toFixed(1)}
-                            </td>
-                            <td>${impact.costImplications[program.id] > 0 ? '+' : ''}${impact.costImplications[program.id].toLocaleString()} AED</td>
-                        </tr>
-                    `).join('')}
-                </tbody>
-            </table>
-        </div>
-    `;
+    // Generate suggestions based on filters
+    const suggestions = generateSuggestions(filters);
     
-    container.innerHTML = resultsHtml;
+    // Update UI components
+    updateSuggestionsTable(suggestions);
+    updateComparisonChart(suggestions);
+    updateImpactChart(suggestions);
+    updateApprovalTable(suggestions);
 }
 
-function generateProposals(impact) {
-    const proposals = [];
+function generateSuggestions(filters) {
+    const suggestions = [];
     const currentYearIndex = mockData.years.length - 1;
 
-    // Proposal 1: Balance Critical Shortages First
-    const criticalPrograms = mockData.programs.filter(p => impact.gaps[p.id] > 2);
-    if (criticalPrograms.length > 0) {
-        proposals.push({
-            title: 'Address Critical Shortages',
-            description: 'Focus on programs with severe faculty shortages',
-            actions: criticalPrograms.map(p => ({
-                program: p.name,
-                action: `Hire ${Math.ceil(impact.gaps[p.id])} FTEs`,
-                priority: 'High',
-                timeline: 'Next 3-6 months'
-            }))
-        });
-    }
-
-    // Proposal 2: Cost-Effective Rebalancing
-    const surplusPrograms = mockData.programs.filter(p => impact.gaps[p.id] < -1);
-    const shortagePrograms = mockData.programs.filter(p => impact.gaps[p.id] > 1);
-    if (surplusPrograms.length > 0 && shortagePrograms.length > 0) {
-        proposals.push({
-            title: 'Cost-Effective Rebalancing',
-            description: 'Redistribute faculty from surplus to shortage areas',
-            actions: [
-                ...surplusPrograms.map(p => ({
-                    program: p.name,
-                    action: `Reassign ${Math.abs(Math.floor(impact.gaps[p.id]))} FTEs to other programs`,
-                    priority: 'Medium',
-                    timeline: 'Next academic year'
-                })),
-                ...shortagePrograms.map(p => ({
-                    program: p.name,
-                    action: `Receive ${Math.ceil(impact.gaps[p.id])} FTEs from surplus areas`,
-                    priority: 'Medium',
-                    timeline: 'Next academic year'
-                }))
-            ]
-        });
-    }
-
-    // Proposal 3: Long-term Sustainability
-    proposals.push({
-        title: 'Long-term Sustainability Plan',
-        description: 'Ensure sustainable faculty staffing levels',
-        actions: mockData.programs.map(p => {
-            const trend = calculateTrend(p.id);
-            return {
-                program: p.name,
-                action: trend.action,
-                priority: trend.priority,
-                timeline: 'Next 1-2 years'
-            };
-        })
+    mockData.programs.forEach(program => {
+        if (filters.department === 'all' || filters.department === program.id) {
+            const currentFTE = mockData.facultyData.currentFTE[program.id][currentYearIndex].value;
+            const requiredFTE = mockData.facultyData.requiredFTE[program.id][currentYearIndex].value;
+            const gap = requiredFTE - currentFTE;
+            
+            // Calculate confidence score based on multiple factors
+            const confidenceScore = calculateConfidenceScore(program, gap, filters);
+            
+            if (confidenceScore >= filters.confidenceThreshold) {
+                suggestions.push({
+                    id: `CHG-${program.id}-${Date.now()}`,
+                    department: program.name,
+                    currentFTE: currentFTE,
+                    suggestedFTE: requiredFTE,
+                    change: gap,
+                    rationale: generateRationale(program, gap, filters),
+                    confidence: confidenceScore,
+                    status: 'Pending',
+                    comments: []
+                });
+            }
+        }
     });
 
-    return proposals;
+    return suggestions;
 }
 
-function calculateTrend(programId) {
-    const values = mockData.facultyData.requiredFTE[programId].map((d, i) => {
-        return mockData.facultyData.requiredFTE[programId][i].value - mockData.facultyData.currentFTE[programId][i].value;
-    });
-    
-    const recentTrend = values.slice(-3);
-    const avgTrend = recentTrend.reduce((a, b) => a + b, 0) / recentTrend.length;
-    
-    if (Math.abs(avgTrend) < 0.5) {
-        return {
-            action: 'Maintain current staffing levels',
-            priority: 'Low'
-        };
-    } else if (avgTrend > 0) {
-        return {
-            action: `Plan for gradual increase of ${Math.ceil(avgTrend)} FTEs`,
-            priority: avgTrend > 2 ? 'High' : 'Medium'
-        };
-    } else {
-        return {
-            action: `Consider reducing by ${Math.abs(Math.floor(avgTrend))} FTEs through attrition`,
-            priority: 'Low'
-        };
-    }
+function calculateConfidenceScore(program, gap, filters) {
+    // Calculate confidence based on multiple factors
+    const dataQualityScore = Math.random() * 20 + 80; // Simulated data quality score
+    const trendConsistencyScore = Math.random() * 15 + 85; // Simulated trend consistency
+    const marketAlignmentScore = Math.random() * 10 + 90; // Simulated market alignment
+
+    // Weight the factors
+    const weightedScore = (
+        dataQualityScore * 0.4 +
+        trendConsistencyScore * 0.3 +
+        marketAlignmentScore * 0.3
+    );
+
+    return Math.round(weightedScore);
 }
 
-function displayProposals(proposals, container) {
-    const proposalsHtml = `
-        <div class="accordion" id="proposalsAccordion">
-            ${proposals.map((proposal, index) => `
-                <div class="accordion-item">
-                    <h2 class="accordion-header">
-                        <button class="accordion-button ${index !== 0 ? 'collapsed' : ''}" 
-                                type="button" 
-                                data-bs-toggle="collapse" 
-                                data-bs-target="#proposal${index}">
-                            ${proposal.title}
-                        </button>
-                    </h2>
-                    <div id="proposal${index}" 
-                         class="accordion-collapse collapse ${index === 0 ? 'show' : ''}" 
-                         data-bs-parent="#proposalsAccordion">
-                        <div class="accordion-body">
-                            <p class="text-muted">${proposal.description}</p>
-                            <div class="table-responsive">
-                                <table class="table table-sm">
-                                    <thead>
-                                        <tr>
-                                            <th>Program</th>
-                                            <th>Recommended Action</th>
-                                            <th>Priority</th>
-                                            <th>Timeline</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        ${proposal.actions.map(action => `
-                                            <tr>
-                                                <td>${action.program}</td>
-                                                <td>${action.action}</td>
-                                                <td>
-                                                    <span class="badge bg-${action.priority === 'High' ? 'danger' : 
-                                                                         (action.priority === 'Medium' ? 'warning' : 'success')}">
-                                                        ${action.priority}
-                                                    </span>
-                                                </td>
-                                                <td>${action.timeline}</td>
-                                            </tr>
-                                        `).join('')}
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
+function generateRationale(program, gap, filters) {
+    const reasons = [
+        gap > 0 ? 'Increasing student enrollment trends' : 'Declining enrollment patterns',
+        gap > 0 ? 'High faculty workload indicators' : 'Lower than optimal faculty utilization',
+        'Alignment with strategic objectives',
+        'Market demand considerations',
+        'Cost optimization requirements'
+    ];
+
+    return reasons[Math.floor(Math.random() * reasons.length)];
+}
+
+function updateSuggestionsTable(suggestions) {
+    const tbody = document.getElementById('suggestionsTableBody');
+    tbody.innerHTML = suggestions.map(suggestion => `
+        <tr>
+            <td>${suggestion.department}</td>
+            <td>${suggestion.currentFTE.toFixed(1)}</td>
+            <td>${suggestion.suggestedFTE.toFixed(1)}</td>
+            <td class="text-${suggestion.change > 0 ? 'success' : 'danger'}">
+                ${suggestion.change > 0 ? '+' : ''}${suggestion.change.toFixed(1)}
+            </td>
+            <td>${suggestion.rationale}</td>
+            <td>
+                <div class="progress">
+                    <div class="progress-bar bg-${suggestion.confidence >= 85 ? 'success' : 'warning'}" 
+                         role="progressbar" 
+                         style="width: ${suggestion.confidence}%">
+                        ${suggestion.confidence}%
                     </div>
                 </div>
-            `).join('')}
-        </div>
-    `;
-    
-    container.innerHTML = proposalsHtml;
-} 
+            </td>
+            <td>
+                <button class="btn btn-sm btn-success" onclick="approveChange('${suggestion.id}')">
+                    <i class="fas fa-check"></i>
+                </button>
+                <button class="btn btn-sm btn-danger" onclick="rejectChange('${suggestion.id}')">
+                    <i class="fas fa-times"></i>
+                </button>
+                <button class="btn btn-sm btn-info" onclick="addComment('${suggestion.id}')">
+                    <i class="fas fa-comment"></i>
+                </button>
+            </td>
+        </tr>
+    `).join('');
+}
+
+function initializeComparisonChart() {
+    const ctx = document.getElementById('comparisonChart').getContext('2d');
+    window.comparisonChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: [],
+            datasets: [
+                {
+                    label: 'Current FTE',
+                    backgroundColor: 'rgba(54, 162, 235, 0.5)',
+                    borderColor: 'rgb(54, 162, 235)',
+                    borderWidth: 1
+                },
+                {
+                    label: 'Suggested FTE',
+                    backgroundColor: 'rgba(75, 192, 192, 0.5)',
+                    borderColor: 'rgb(75, 192, 192)',
+                    borderWidth: 1
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+}
+
+function updateComparisonChart(suggestions) {
+    if (window.comparisonChart) {
+        window.comparisonChart.data.labels = suggestions.map(s => s.department);
+        window.comparisonChart.data.datasets[0].data = suggestions.map(s => s.currentFTE);
+        window.comparisonChart.data.datasets[1].data = suggestions.map(s => s.suggestedFTE);
+        window.comparisonChart.update();
+    }
+}
+
+function initializeImpactChart() {
+    const ctx = document.getElementById('impactChart').getContext('2d');
+    window.impactChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: [],
+            datasets: [
+                {
+                    label: 'Workload Balance',
+                    borderColor: 'rgb(54, 162, 235)',
+                    fill: false
+                },
+                {
+                    label: 'Cost Efficiency',
+                    borderColor: 'rgb(75, 192, 192)',
+                    fill: false
+                },
+                {
+                    label: 'Quality Score',
+                    borderColor: 'rgb(255, 99, 132)',
+                    fill: false
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    max: 100
+                }
+            }
+        }
+    });
+}
+
+function updateImpactChart(suggestions) {
+    if (window.impactChart) {
+        const timeframe = parseInt(document.getElementById('timeframe').value);
+        const labels = Array.from({length: timeframe + 1}, (_, i) => `Year ${i}`);
+        
+        // Generate forecasted impact metrics
+        const workloadBalance = generateForecastMetric(85, timeframe);
+        const costEfficiency = generateForecastMetric(80, timeframe);
+        const qualityScore = generateForecastMetric(90, timeframe);
+
+        window.impactChart.data.labels = labels;
+        window.impactChart.data.datasets[0].data = workloadBalance;
+        window.impactChart.data.datasets[1].data = costEfficiency;
+        window.impactChart.data.datasets[2].data = qualityScore;
+        window.impactChart.update();
+    }
+}
+
+function generateForecastMetric(baseValue, timeframe) {
+    return Array.from({length: timeframe + 1}, (_, i) => {
+        const improvement = i * (Math.random() * 2 + 1);
+        return Math.min(100, baseValue + improvement);
+    });
+}
+
+function updateApprovalTable(suggestions) {
+    const tbody = document.getElementById('approvalTableBody');
+    tbody.innerHTML = suggestions.map(suggestion => `
+        <tr>
+            <td>${suggestion.id}</td>
+            <td>${suggestion.department}</td>
+            <td>${suggestion.change > 0 ? '+' : ''}${suggestion.change.toFixed(1)} FTE</td>
+            <td>
+                <span class="badge bg-warning">Pending</span>
+            </td>
+            <td>
+                <div class="comments-container">
+                    ${suggestion.comments.map(comment => `
+                        <div class="comment">${comment}</div>
+                    `).join('')}
+                </div>
+            </td>
+            <td>
+                <button class="btn btn-sm btn-success" onclick="approveChange('${suggestion.id}')">
+                    Approve
+                </button>
+                <button class="btn btn-sm btn-danger" onclick="rejectChange('${suggestion.id}')">
+                    Reject
+                </button>
+            </td>
+        </tr>
+    `).join('');
+}
+
+// Action handlers for the approval workflow
+window.approveChange = function(changeId) {
+    const row = document.querySelector(`tr:has(td:contains('${changeId}'))`);
+    if (row) {
+        const statusCell = row.querySelector('td:nth-child(4)');
+        statusCell.innerHTML = '<span class="badge bg-success">Approved</span>';
+    }
+};
+
+window.rejectChange = function(changeId) {
+    const row = document.querySelector(`tr:has(td:contains('${changeId}'))`);
+    if (row) {
+        const statusCell = row.querySelector('td:nth-child(4)');
+        statusCell.innerHTML = '<span class="badge bg-danger">Rejected</span>';
+    }
+};
+
+window.addComment = function(changeId) {
+    const comment = prompt('Enter your comment:');
+    if (comment) {
+        const row = document.querySelector(`tr:has(td:contains('${changeId}'))`);
+        if (row) {
+            const commentsContainer = row.querySelector('.comments-container');
+            const commentDiv = document.createElement('div');
+            commentDiv.className = 'comment';
+            commentDiv.textContent = comment;
+            commentsContainer.appendChild(commentDiv);
+        }
+    }
+};
+
+// Initialize charts
+function initializeCharts() {
+    // Initialize comparison chart
+    const comparisonCtx = document.getElementById('comparisonChart').getContext('2d');
+    window.comparisonChart = new Chart(comparisonCtx, {
+        type: 'bar',
+        data: {
+            labels: [],
+            datasets: [
+                {
+                    label: 'Current FTE',
+                    backgroundColor: 'rgba(54, 162, 235, 0.5)',
+                    borderColor: 'rgb(54, 162, 235)',
+                    borderWidth: 1
+                },
+                {
+                    label: 'Suggested FTE',
+                    backgroundColor: 'rgba(75, 192, 192, 0.5)',
+                    borderColor: 'rgb(75, 192, 192)',
+                    borderWidth: 1
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+
+    // Initialize impact chart
+    const impactCtx = document.getElementById('impactChart').getContext('2d');
+    window.impactChart = new Chart(impactCtx, {
+        type: 'line',
+        data: {
+            labels: [],
+            datasets: [
+                {
+                    label: 'Workload Balance',
+                    borderColor: 'rgb(54, 162, 235)',
+                    fill: false
+                },
+                {
+                    label: 'Cost Efficiency',
+                    borderColor: 'rgb(75, 192, 192)',
+                    fill: false
+                },
+                {
+                    label: 'Quality Score',
+                    borderColor: 'rgb(255, 99, 132)',
+                    fill: false
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    max: 100
+                }
+            }
+        }
+    });
+}

@@ -3,11 +3,36 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Dubai Higher Education Dashboard">
     <title>Dubai Higher Education Dashboard</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/boxicons@2.0.7/css/boxicons.min.css" rel="stylesheet">
     <link href="styles/main.css" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- Core Libraries -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" defer></script>
+    
+    <!-- Data -->
+    <script src="js/data/mockData.js" defer></script>
+    
+    <!-- Module Scripts -->
+    <script src="js/modules/facultyLoad.js" defer></script>
+    <script src="js/modules/workloadGap.js" defer></script>
+    <script src="js/modules/smartAllocation.js" defer></script>
+    <script src="js/modules/facultyPlanning.js" defer></script>
+    <script src="js/modules/viabilityMatrix.js" defer></script>
+    <script src="js/modules/portfolioScenarios.js" defer></script>
+    <script src="js/modules/programAnalytics.js" defer></script>
+    <script src="js/modules/kpiSummary.js" defer></script>
+    <script src="js/modules/employability.js" defer></script>
+    <script src="js/modules/skillsAlignment.js" defer></script>
+    <script src="js/modules/impactDashboard.js" defer></script>
+    <script src="js/modules/executiveSummary.js" defer></script>
+    <script src="js/modules/successScorecard.js" defer></script>
+    
+    <!-- Main Script -->
+    <script src="js/main.js" defer></script>
 </head>
 <body>
     <div class="container-fluid">
@@ -63,12 +88,107 @@
             <div class="tab-content mt-4" id="mainTabContent">
                 <!-- Faculty Load Summary -->
                 <div class="tab-pane fade show active" id="facultyLoad">
-                    <div class="row">
+                    <div class="row mb-4">
                         <div class="col-md-12">
                             <h2>Faculty Load Summary Dashboard</h2>
                             <div class="card">
                                 <div class="card-body">
-                                    <canvas id="facultyLoadChart"></canvas>
+                                    <!-- Filters Section -->
+                                    <div class="row mb-4">
+                                        <div class="col-md-4">
+                                            <label class="form-label">Term</label>
+                                            <select class="form-select" id="termFilter">
+                                                <!-- Terms will be populated dynamically -->
+                                            </select>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label class="form-label">Department</label>
+                                            <select class="form-select" id="deptFilter">
+                                                <option value="all">All Departments</option>
+                                                <option value="Business">Business & Economics</option>
+                                                <option value="CompSci">Computer Science</option>
+                                                <option value="Engineering">Engineering</option>
+                                                <option value="Healthcare">Healthcare</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label class="form-label">Faculty Type</label>
+                                            <select class="form-select" id="facultyTypeFilter">
+                                                <option value="all">All Types</option>
+                                                <option value="fulltime">Full-Time</option>
+                                                <option value="adjunct">Adjunct</option>
+                                                <option value="visiting">Visiting</option>
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    <!-- KPI Cards -->
+                                    <div class="row mb-4">
+                                        <div class="col-md-3">
+                                            <div class="card bg-light">
+                                                <div class="card-body">
+                                                    <h6 class="card-title">Total FTE</h6>
+                                                    <h3 class="mb-0" id="totalFTE">0</h3>
+                                                    <small class="text-muted">Current Faculty Load</small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <div class="card bg-light">
+                                                <div class="card-body">
+                                                    <h6 class="card-title">Required FTE</h6>
+                                                    <h3 class="mb-0" id="requiredFTE">0</h3>
+                                                    <small class="text-muted">Based on Enrollment</small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <div class="card bg-light">
+                                                <div class="card-body">
+                                                    <h6 class="card-title">Understaffed Programs</h6>
+                                                    <h3 class="mb-0 text-danger" id="understaffedCount">0</h3>
+                                                    <small class="text-muted">Need Additional FTE</small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <div class="card bg-light">
+                                                <div class="card-body">
+                                                    <h6 class="card-title">Overstaffed Programs</h6>
+                                                    <h3 class="mb-0 text-warning" id="overstaffedCount">0</h3>
+                                                    <small class="text-muted">Excess Capacity</small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Charts Section -->
+                                    <div class="row">
+                                        <div class="col-md-6 mb-4">
+                                            <div class="card">
+                                                <div class="card-body">
+                                                    <h5 class="card-title">FTE Distribution by Department</h5>
+                                                    <canvas id="fteDepartmentChart"></canvas>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6 mb-4">
+                                            <div class="card">
+                                                <div class="card-body">
+                                                    <h5 class="card-title">Faculty Load Trend</h5>
+                                                    <canvas id="loadTrendChart"></canvas>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-12">
+                                            <div class="card">
+                                                <div class="card-body">
+                                                    <h5 class="card-title">Department Load Heat Map</h5>
+                                                    <div id="loadHeatMap" style="height: 300px;"></div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -245,25 +365,5 @@
             </div>
         </div>
     </div>
-
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <!-- Data -->
-    <script src="js/data/mockData.js"></script>
-    <!-- Module Scripts -->
-    <script src="js/modules/facultyLoad.js"></script>
-    <script src="js/modules/workloadGap.js"></script>
-    <script src="js/modules/smartAllocation.js"></script>
-    <script src="js/modules/facultyPlanning.js"></script>
-    <script src="js/modules/viabilityMatrix.js"></script>
-    <script src="js/modules/portfolioScenarios.js"></script>
-    <script src="js/modules/programAnalytics.js"></script>
-    <script src="js/modules/kpiSummary.js"></script>
-    <script src="js/modules/employability.js"></script>
-    <script src="js/modules/skillsAlignment.js"></script>
-    <script src="js/modules/impactDashboard.js"></script>
-    <script src="js/modules/executiveSummary.js"></script>
-    <script src="js/modules/successScorecard.js"></script>
-    <!-- Main Script -->
-    <script src="js/main.js"></script>
 </body>
 </html> 
