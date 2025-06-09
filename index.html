@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dubai Higher Education Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/boxicons@2.0.7/css/boxicons.min.css" rel="stylesheet">
+    <link href="styles/main.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="container-fluid">
+        <nav class="navbar navbar-expand-lg navbar-light bg-light mb-4">
+            <div class="container">
+                <a class="navbar-brand" href="#">Dubai Higher Education Dashboard</a>
+            </div>
+        </nav>
+
+        <div class="container">
+            <ul class="nav nav-tabs" id="mainTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#facultyLoad">Faculty Load Summary</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" data-bs-toggle="tab" data-bs-target="#workloadGap">Workload Gap Report</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" data-bs-toggle="tab" data-bs-target="#smartAllocation">Smart Allocation</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" data-bs-toggle="tab" data-bs-target="#facultyPlanning">Faculty Planning</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" data-bs-toggle="tab" data-bs-target="#viabilityMatrix">Program Viability</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" data-bs-toggle="tab" data-bs-target="#portfolioScenarios">Portfolio Scenarios</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" data-bs-toggle="tab" data-bs-target="#programAnalytics">Program Analytics</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" data-bs-toggle="tab" data-bs-target="#kpiSummary">KPI Summary</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" data-bs-toggle="tab" data-bs-target="#employability">Employability Scorecard</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" data-bs-toggle="tab" data-bs-target="#skillsAlignment">Skills Alignment</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" data-bs-toggle="tab" data-bs-target="#impact">Impact Dashboard</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" data-bs-toggle="tab" data-bs-target="#executiveSummary">Executive Summary</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" data-bs-toggle="tab" data-bs-target="#successScorecard">Success Scorecard</button>
+                </li>
+            </ul>
+
+            <div class="tab-content mt-4" id="mainTabContent">
+                <!-- Faculty Load Summary -->
+                <div class="tab-pane fade show active" id="facultyLoad">
+                    <div class="row">
+                        <div class="col-md-12">
+                            <h2>Faculty Load Summary Dashboard</h2>
+                            <div class="card">
+                                <div class="card-body">
+                                    <canvas id="facultyLoadChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Workload Gap Report -->
+                <div class="tab-pane fade" id="workloadGap">
+                    <div class="row">
+                        <div class="col-md-12">
+                            <h2>Workload Gap Report</h2>
+                            <div class="card">
+                                <div class="card-body">
+                                    <canvas id="workloadGapChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Smart Allocation -->
+                <div class="tab-pane fade" id="smartAllocation">
+                    <div class="row">
+                        <div class="col-md-12">
+                            <h2>Smart Allocation Suggestions</h2>
+                            <div class="card">
+                                <div class="card-body">
+                                    <div id="allocationSimulator"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Faculty Planning -->
+                <div class="tab-pane fade" id="facultyPlanning">
+                    <div class="row">
+                        <div class="col-md-12">
+                            <h2>Faculty Planning Simulation Tool</h2>
+                            <div class="card">
+                                <div class="card-body">
+                                    <div id="facultyPlanning"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Program Viability -->
+                <div class="tab-pane fade" id="viabilityMatrix">
+                    <div class="row">
+                        <div class="col-md-12">
+                            <h2>Program Viability Matrix</h2>
+                            <div class="card">
+                                <div class="card-body">
+                                    <div id="viabilityGrid"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Portfolio Scenarios -->
+                <div class="tab-pane fade" id="portfolioScenarios">
+                    <div class="row">
+                        <div class="col-md-12">
+                            <h2>Portfolio Scenario Snapshots</h2>
+                            <div class="card">
+                                <div class="card-body">
+                                    <div id="scenarioComparison"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Program Analytics -->
+                <div class="tab-pane fade" id="programAnalytics">
+                    <div class="row">
+                        <div class="col-md-12">
+                            <h2>Program Analytics Dashboard</h2>
+                            <div class="card">
+                                <div class="card-body">
+                                    <canvas id="programAnalyticsChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- KPI Summary -->
+                <div class="tab-pane fade" id="kpiSummary">
+                    <div class="row">
+                        <div class="col-md-12">
+                            <h2>KPI Summary Report</h2>
+                            <div class="card">
+                                <div class="card-body">
+                                    <div id="kpiDashboard"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Employability Scorecard -->
+                <div class="tab-pane fade" id="employability">
+                    <div class="row">
+                        <div class="col-md-12">
+                            <h2>Employability Scorecard</h2>
+                            <div class="card">
+                                <div class="card-body">
+                                    <canvas id="employabilityChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Skills Alignment -->
+                <div class="tab-pane fade" id="skillsAlignment">
+                    <div class="row">
+                        <div class="col-md-12">
+                            <h2>Skills–Outcome Alignment Map</h2>
+                            <div class="card">
+                                <div class="card-body">
+                                    <div id="skillsMap"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Impact Dashboard -->
+                <div class="tab-pane fade" id="impact">
+                    <div class="row">
+                        <div class="col-md-12">
+                            <h2>Impact Dashboard</h2>
+                            <div class="card">
+                                <div class="card-body">
+                                    <canvas id="impactMetricsChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Executive Summary -->
+                <div class="tab-pane fade" id="executiveSummary">
+                    <div class="row">
+                        <div class="col-md-12">
+                            <h2>POC Executive Summary Report</h2>
+                            <div class="card">
+                                <div class="card-body">
+                                    <div id="executiveSummaryContent"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Success Scorecard -->
+                <div class="tab-pane fade" id="successScorecard">
+                    <div class="row">
+                        <div class="col-md-12">
+                            <h2>Success Scorecard</h2>
+                            <div class="card">
+                                <div class="card-body">
+                                    <div id="successMetrics"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Data -->
+    <script src="js/data/mockData.js"></script>
+    <!-- Module Scripts -->
+    <script src="js/modules/facultyLoad.js"></script>
+    <script src="js/modules/workloadGap.js"></script>
+    <script src="js/modules/smartAllocation.js"></script>
+    <script src="js/modules/facultyPlanning.js"></script>
+    <script src="js/modules/viabilityMatrix.js"></script>
+    <script src="js/modules/portfolioScenarios.js"></script>
+    <script src="js/modules/programAnalytics.js"></script>
+    <script src="js/modules/kpiSummary.js"></script>
+    <script src="js/modules/employability.js"></script>
+    <script src="js/modules/skillsAlignment.js"></script>
+    <script src="js/modules/impactDashboard.js"></script>
+    <script src="js/modules/executiveSummary.js"></script>
+    <script src="js/modules/successScorecard.js"></script>
+    <!-- Main Script -->
+    <script src="js/main.js"></script>
+</body>
+</html> 
